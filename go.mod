@@ -4,6 +4,8 @@ go 1.19
 
 require (
 	github.com/99designs/gqlgen v0.17.24
+	github.com/google/uuid v1.3.0
+	github.com/neo4j/neo4j-go-driver/v5 v5.4.0
 	github.com/vektah/gqlparser/v2 v2.5.1
 )
 

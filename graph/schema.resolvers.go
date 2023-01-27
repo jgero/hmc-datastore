@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/jgero/hmc-datastore/graph/model"
+	"github.com/jgero/hmc-datastore/graph/repository"
 )
 
 // CreatePerson is the resolver for the createPerson field.
@@ -16,15 +17,17 @@ func (r *mutationResolver) CreatePerson(ctx context.Context, input model.NewPers
 	panic(fmt.Errorf("not implemented: CreatePerson - createPerson"))
 }
 
+// CreateArticle is the resolver for the createArticle field.
+func (r *mutationResolver) CreateArticle(ctx context.Context, input model.NewArticle) (*model.Article, error) {
+    repo := repository.GetNeo4jRepo()
+    return repo.WriteArticle(ctx, &input)
+	// panic(fmt.Errorf("not implemented: CreateArticle - createArticle"))
+}
+
 // Articles is the resolver for the articles field.
 func (r *queryResolver) Articles(ctx context.Context) ([]*model.Article, error) {
-	return []*model.Article{{
-		Title:   "test title",
-		Content: "my content",
-		Writer: &model.Person{
-			Name: "john doe",
-		},
-	}}, nil
+    repo := repository.GetNeo4jRepo()
+    return repo.GetArticles(ctx)
 	// panic(fmt.Errorf("not implemented: Articles - articles"))
 }
 

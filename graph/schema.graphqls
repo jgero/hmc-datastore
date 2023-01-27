@@ -12,10 +12,16 @@ type Query {
   articles: [Article!]!
 }
 
+input NewArticle {
+  title: String!
+  content: String!
+}
+
 input NewPerson {
   name: String!
 }
 
 type Mutation {
   createPerson(input: NewPerson!): Person!
+  createArticle(input: NewArticle!): Article!
 }

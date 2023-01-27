@@ -11,14 +11,21 @@ import (
 	"github.com/jgero/hmc-datastore/graph/model"
 )
 
-// CreateTodo is the resolver for the createTodo field.
-func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: CreateTodo - createTodo"))
+// CreatePerson is the resolver for the createPerson field.
+func (r *mutationResolver) CreatePerson(ctx context.Context, input model.NewPerson) (*model.Person, error) {
+	panic(fmt.Errorf("not implemented: CreatePerson - createPerson"))
 }
 
-// Todos is the resolver for the todos field.
-func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: Todos - todos"))
+// Articles is the resolver for the articles field.
+func (r *queryResolver) Articles(ctx context.Context) ([]*model.Article, error) {
+	return []*model.Article{{
+		Title:   "test title",
+		Content: "my content",
+		Writer: &model.Person{
+			Name: "john doe",
+		},
+	}}, nil
+	// panic(fmt.Errorf("not implemented: Articles - articles"))
 }
 
 // Mutation returns MutationResolver implementation.

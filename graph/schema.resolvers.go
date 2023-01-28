@@ -17,6 +17,12 @@ func (r *articleResolver) Writer(ctx context.Context, obj *model.Article) (*mode
 	return repo.GetWriter(ctx, obj)
 }
 
+// Keywords is the resolver for the keywords field.
+func (r *articleResolver) Keywords(ctx context.Context, obj *model.Article) ([]string, error) {
+	repo := repository.GetNeo4jRepo()
+	return repo.GetKeywords(ctx, obj.Uuid)
+}
+
 // CreatePerson is the resolver for the createPerson field.
 func (r *mutationResolver) CreatePerson(ctx context.Context, input model.NewPerson) (*model.Person, error) {
 	repo := repository.GetNeo4jRepo()
@@ -47,4 +53,3 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 type articleResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-

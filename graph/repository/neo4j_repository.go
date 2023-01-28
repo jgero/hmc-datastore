@@ -142,8 +142,8 @@ func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model
 		id := uuid.NewString()
 		records, err := tx.Run(ctx, `CREATE (p:Person { uuid: $uuid, name: $name }) RETURN p`,
 			map[string]any{
-				"uuid":      id,
-				"name":    p.Name,
+				"uuid": id,
+				"name": p.Name,
 			})
 		if err != nil {
 			return nil, err
@@ -169,3 +169,26 @@ func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model
 	})
 }
 
+func (r *Neo4jRepo) GetKeywords(ctx context.Context, k string) ([]string, error) {
+	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
+	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) ([]string, error) {
+		result, err := tx.Run(ctx, `MATCH (:Article {uuid: $uuid})-[:relates_to]->(k:Keyword) RETURN k.value`,
+			map[string]any{
+				"uuid": k,
+			})
+		if err != nil {
+			return nil, err
+		}
+		keywords := make([]string, 0)
+		for result.Next(ctx) {
+			record := result.Record()
+			rawNode, found := record.Get("k.value")
+			if !found {
+				return nil, fmt.Errorf("could not find column")
+			}
+			keyword := rawNode.(string)
+			keywords = append(keywords, keyword)
+		}
+		return keywords, nil
+	})
+}

@@ -11,4 +11,5 @@ type Repository interface {
     WriteArticle(context.Context, *model.NewArticle) (*model.Article, error)
     WritePerson(context.Context, *model.NewPerson) (*model.Person, error)
     GetWriter(context.Context, *model.Article) (*model.Person, error)
+    GetKeywords(context.Context, string) ([]string, error)
 }

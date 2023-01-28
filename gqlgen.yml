@@ -65,4 +65,6 @@ models:
     fields:
       writer:
         resolver: true
+      keywords:
+        resolver: true
 

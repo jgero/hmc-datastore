@@ -63,6 +63,6 @@ models:
       - github.com/99designs/gqlgen/graphql.Int32
   Article:
     fields:
-      person:
+      writer:
         resolver: true
 

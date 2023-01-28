@@ -9,4 +9,6 @@ import (
 type Repository interface {
     GetArticles(context.Context) ([]*model.Article, error)
     WriteArticle(context.Context, *model.NewArticle) (*model.Article, error)
+    WritePerson(context.Context, *model.NewPerson) (*model.Person, error)
+    GetWriter(context.Context, *model.Article) (*model.Person, error)
 }

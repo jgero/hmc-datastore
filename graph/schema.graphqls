@@ -2,10 +2,12 @@ type Article {
   title: String!
   content: String!
   writer: Person!
+  uuid: String!
 }
 
 type Person {
   name: String!
+  uuid: String!
 }
 
 type Query {
@@ -15,6 +17,7 @@ type Query {
 input NewArticle {
   title: String!
   content: String!
+  writerUuid: String!
 }
 
 input NewPerson {

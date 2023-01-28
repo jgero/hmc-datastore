@@ -6,30 +6,37 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jgero/hmc-datastore/graph/model"
 	"github.com/jgero/hmc-datastore/graph/repository"
 )
 
+// Writer is the resolver for the writer field.
+func (r *articleResolver) Writer(ctx context.Context, obj *model.Article) (*model.Person, error) {
+	repo := repository.GetNeo4jRepo()
+	return repo.GetWriter(ctx, obj)
+}
+
 // CreatePerson is the resolver for the createPerson field.
 func (r *mutationResolver) CreatePerson(ctx context.Context, input model.NewPerson) (*model.Person, error) {
-	panic(fmt.Errorf("not implemented: CreatePerson - createPerson"))
+	repo := repository.GetNeo4jRepo()
+	return repo.WritePerson(ctx, &input)
 }
 
 // CreateArticle is the resolver for the createArticle field.
 func (r *mutationResolver) CreateArticle(ctx context.Context, input model.NewArticle) (*model.Article, error) {
-    repo := repository.GetNeo4jRepo()
-    return repo.WriteArticle(ctx, &input)
-	// panic(fmt.Errorf("not implemented: CreateArticle - createArticle"))
+	repo := repository.GetNeo4jRepo()
+	return repo.WriteArticle(ctx, &input)
 }
 
 // Articles is the resolver for the articles field.
 func (r *queryResolver) Articles(ctx context.Context) ([]*model.Article, error) {
-    repo := repository.GetNeo4jRepo()
-    return repo.GetArticles(ctx)
-	// panic(fmt.Errorf("not implemented: Articles - articles"))
+	repo := repository.GetNeo4jRepo()
+	return repo.GetArticles(ctx)
 }
+
+// Article returns ArticleResolver implementation.
+func (r *Resolver) Article() ArticleResolver { return &articleResolver{r} }
 
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
@@ -37,5 +44,7 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type articleResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+

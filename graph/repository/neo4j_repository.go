@@ -24,7 +24,7 @@ func GetNeo4jRepo() Repository {
 		if err != nil {
 			panic(err)
 		}
-        // TODO: fix closing driver
+		// TODO: fix closing driver
 		// ctx := context.Background()
 		// close driver when background shuts down
 		// defer driver.Close(ctx)
@@ -56,7 +56,11 @@ func (r *Neo4jRepo) GetArticles(ctx context.Context) ([]*model.Article, error) {
 			if err != nil {
 				return nil, err
 			}
-			articles = append(articles, &model.Article{Title: title, Content: content, Writer: nil})
+			uuid, err := neo4j.GetProperty[string](articleNode, "uuid")
+			if err != nil {
+				return nil, err
+			}
+			articles = append(articles, &model.Article{Title: title, Content: content, Uuid: uuid})
 		}
 		return articles, nil
 	})
@@ -66,13 +70,16 @@ func (r *Neo4jRepo) WriteArticle(ctx context.Context, a *model.NewArticle) (*mod
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Article, error) {
 		id := uuid.NewString()
-		records, err := tx.Run(ctx, "CREATE (n:Article { title: $title, content: $content, uuid: $uuid }) RETURN n", map[string]any{
-			"title":   a.Title,
-			"content": a.Content,
-			"uuid":    id,
-		})
-		// In face of driver native errors, make sure to return them directly.
-		// Depending on the error, the driver may try to execute the function again.
+		records, err := tx.Run(ctx, `
+            MATCH (p:Person { uuid: $writerUuid })
+            CREATE (n:Article { title: $title, content: $content, uuid: $uuid })<-[:writer]-(p)
+            RETURN n`,
+			map[string]any{
+				"title":      a.Title,
+				"content":    a.Content,
+				"uuid":       id,
+				"writerUuid": a.WriterUUID,
+			})
 		if err != nil {
 			return nil, err
 		}
@@ -93,6 +100,72 @@ func (r *Neo4jRepo) WriteArticle(ctx context.Context, a *model.NewArticle) (*mod
 		if err != nil {
 			return nil, err
 		}
-		return &model.Article{Title: title, Content: content, Writer: nil}, nil
+		uuid, err := neo4j.GetProperty[string](articleNode, "uuid")
+		if err != nil {
+			return nil, err
+		}
+		return &model.Article{Title: title, Content: content, Uuid: uuid}, nil
 	})
 }
+
+func (r *Neo4jRepo) GetWriter(ctx context.Context, a *model.Article) (*model.Person, error) {
+	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
+	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Person, error) {
+		result, err := tx.Run(ctx, `MATCH (:Article { uuid: $uuid })<-[:writer]-(p:Person) RETURN p`,
+			map[string]any{
+				"uuid": a.Uuid,
+			})
+		record, err := result.Single(ctx)
+		if err != nil {
+			return nil, err
+		}
+		rawNode, found := record.Get("p")
+		if !found {
+			return nil, fmt.Errorf("could not find column")
+		}
+		writerNode := rawNode.(neo4j.Node)
+		name, err := neo4j.GetProperty[string](writerNode, "name")
+		if err != nil {
+			return nil, err
+		}
+		uuid, err := neo4j.GetProperty[string](writerNode, "uuid")
+		if err != nil {
+			return nil, err
+		}
+		return &model.Person{Name: name, UUID: uuid}, nil
+	})
+}
+
+func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model.Person, error) {
+	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
+	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Person, error) {
+		id := uuid.NewString()
+		records, err := tx.Run(ctx, `CREATE (p:Person { uuid: $uuid, name: $name }) RETURN p`,
+			map[string]any{
+				"uuid":      id,
+				"name":    p.Name,
+			})
+		if err != nil {
+			return nil, err
+		}
+		record, err := records.Single(ctx)
+		if err != nil {
+			return nil, err
+		}
+		rawNode, found := record.Get("p")
+		if !found {
+			return nil, fmt.Errorf("could not find column")
+		}
+		personNode := rawNode.(neo4j.Node)
+		uuid, err := neo4j.GetProperty[string](personNode, "uuid")
+		if err != nil {
+			return nil, err
+		}
+		name, err := neo4j.GetProperty[string](personNode, "name")
+		if err != nil {
+			return nil, err
+		}
+		return &model.Person{Name: name, UUID: uuid}, nil
+	})
+}
+

@@ -192,3 +192,28 @@ func (r *Neo4jRepo) GetKeywords(ctx context.Context, k string) ([]string, error)
 		return keywords, nil
 	})
 }
+
+func (r *Neo4jRepo) WriteKeywords(ctx context.Context, s *model.SetKeywords) ([]string, error) {
+	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
+	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) ([]string, error) {
+		_, err := tx.Run(ctx, `
+        MATCH (n {uuid: $uuid})
+        WITH n, $keywords as kwds
+        FOREACH (kwd in kwds |
+          MERGE (k:Keyword {value:kwd})
+          MERGE (n)-[:relates_to]->(k)
+        )
+        WITH n, kwds
+        MATCH (n)-[r:relates_to]-(k:Keyword) 
+        WHERE NOT k.value IN kwds
+        DELETE r`,
+			map[string]any{
+				"uuid":     s.UUID,
+				"keywords": s.Keywords,
+			})
+		if err != nil {
+			return nil, err
+		}
+		return s.Keywords, nil
+	})
+}

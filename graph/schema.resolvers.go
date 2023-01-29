@@ -35,6 +35,12 @@ func (r *mutationResolver) CreateArticle(ctx context.Context, input model.NewArt
 	return repo.WriteArticle(ctx, &input)
 }
 
+// SetKeywords is the resolver for the setKeywords field.
+func (r *mutationResolver) SetKeywords(ctx context.Context, input model.SetKeywords) ([]string, error) {
+	repo := repository.GetNeo4jRepo()
+	return repo.WriteKeywords(ctx, &input)
+}
+
 // Articles is the resolver for the articles field.
 func (r *queryResolver) Articles(ctx context.Context) ([]*model.Article, error) {
 	repo := repository.GetNeo4jRepo()

@@ -1,4 +1,4 @@
-type Article {
+type Post {
   title: String!
   content: String!
   writer: Person!
@@ -12,10 +12,10 @@ type Person {
 }
 
 type Query {
-  articles: [Article!]!
+  posts: [Post!]!
 }
 
-input NewArticle {
+input NewPost {
   title: String!
   content: String!
   writerUuid: String!
@@ -33,6 +33,6 @@ input SetKeywords {
 
 type Mutation {
   createPerson(input: NewPerson!): Person!
-  createArticle(input: NewArticle!): Article!
+  createPost(input: NewPost!): Post!
   setKeywords(input: SetKeywords!): [String!]!
 }

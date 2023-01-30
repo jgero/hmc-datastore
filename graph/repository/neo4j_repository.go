@@ -33,14 +33,14 @@ func GetNeo4jRepo() Repository {
 	return repo
 }
 
-func (r *Neo4jRepo) GetArticles(ctx context.Context) ([]*model.Article, error) {
+func (r *Neo4jRepo) GetPosts(ctx context.Context) ([]*model.Post, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
-	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) ([]*model.Article, error) {
-		result, err := tx.Run(ctx, "MATCH (n:Article) RETURN n", map[string]any{})
+	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) ([]*model.Post, error) {
+		result, err := tx.Run(ctx, "MATCH (n:Post) RETURN n", map[string]any{})
 		if err != nil {
 			return nil, err
 		}
-		articles := make([]*model.Article, 0)
+		articles := make([]*model.Post, 0)
 		for result.Next(ctx) {
 			record := result.Record()
 			rawNode, found := record.Get("n")
@@ -60,19 +60,19 @@ func (r *Neo4jRepo) GetArticles(ctx context.Context) ([]*model.Article, error) {
 			if err != nil {
 				return nil, err
 			}
-			articles = append(articles, &model.Article{Title: title, Content: content, Uuid: uuid})
+			articles = append(articles, &model.Post{Title: title, Content: content, Uuid: uuid})
 		}
 		return articles, nil
 	})
 }
 
-func (r *Neo4jRepo) WriteArticle(ctx context.Context, a *model.NewArticle) (*model.Article, error) {
+func (r *Neo4jRepo) WritePost(ctx context.Context, a *model.NewPost) (*model.Post, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
-	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Article, error) {
+	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Post, error) {
 		id := uuid.NewString()
 		records, err := tx.Run(ctx, `
             MATCH (p:Person { uuid: $writerUuid })
-            CREATE (n:Article { title: $title, content: $content, uuid: $uuid })<-[:writer]-(p)
+            CREATE (n:Post { title: $title, content: $content, uuid: $uuid })<-[:writer]-(p)
             RETURN n`,
 			map[string]any{
 				"title":      a.Title,
@@ -104,14 +104,14 @@ func (r *Neo4jRepo) WriteArticle(ctx context.Context, a *model.NewArticle) (*mod
 		if err != nil {
 			return nil, err
 		}
-		return &model.Article{Title: title, Content: content, Uuid: uuid}, nil
+		return &model.Post{Title: title, Content: content, Uuid: uuid}, nil
 	})
 }
 
-func (r *Neo4jRepo) GetWriter(ctx context.Context, a *model.Article) (*model.Person, error) {
+func (r *Neo4jRepo) GetWriter(ctx context.Context, a *model.Post) (*model.Person, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Person, error) {
-		result, err := tx.Run(ctx, `MATCH (:Article { uuid: $uuid })<-[:writer]-(p:Person) RETURN p`,
+		result, err := tx.Run(ctx, `MATCH (:Post { uuid: $uuid })<-[:writer]-(p:Person) RETURN p`,
 			map[string]any{
 				"uuid": a.Uuid,
 			})
@@ -172,7 +172,7 @@ func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model
 func (r *Neo4jRepo) GetKeywords(ctx context.Context, k string) ([]string, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) ([]string, error) {
-		result, err := tx.Run(ctx, `MATCH (:Article {uuid: $uuid})-[:relates_to]->(k:Keyword) RETURN k.value`,
+		result, err := tx.Run(ctx, `MATCH (:Post {uuid: $uuid})-[:relates_to]->(k:Keyword) RETURN k.value`,
 			map[string]any{
 				"uuid": k,
 			})

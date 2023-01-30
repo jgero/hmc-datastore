@@ -7,10 +7,10 @@ import (
 )
 
 type Repository interface {
-    GetArticles(context.Context) ([]*model.Article, error)
-    WriteArticle(context.Context, *model.NewArticle) (*model.Article, error)
+    GetPosts(context.Context) ([]*model.Post, error)
+    WritePost(context.Context, *model.NewPost) (*model.Post, error)
     WritePerson(context.Context, *model.NewPerson) (*model.Person, error)
-    GetWriter(context.Context, *model.Article) (*model.Person, error)
+    GetWriter(context.Context, *model.Post) (*model.Person, error)
     GetKeywords(context.Context, string) ([]string, error)
     WriteKeywords(context.Context, *model.SetKeywords) ([]string, error)
 }

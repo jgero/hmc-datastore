@@ -6,22 +6,11 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jgero/hmc-datastore/graph/model"
 	"github.com/jgero/hmc-datastore/graph/repository"
 )
-
-// Writer is the resolver for the writer field.
-func (r *articleResolver) Writer(ctx context.Context, obj *model.Article) (*model.Person, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.GetWriter(ctx, obj)
-}
-
-// Keywords is the resolver for the keywords field.
-func (r *articleResolver) Keywords(ctx context.Context, obj *model.Article) ([]string, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.GetKeywords(ctx, obj.Uuid)
-}
 
 // CreatePerson is the resolver for the createPerson field.
 func (r *mutationResolver) CreatePerson(ctx context.Context, input model.NewPerson) (*model.Person, error) {
@@ -29,10 +18,9 @@ func (r *mutationResolver) CreatePerson(ctx context.Context, input model.NewPers
 	return repo.WritePerson(ctx, &input)
 }
 
-// CreateArticle is the resolver for the createArticle field.
-func (r *mutationResolver) CreateArticle(ctx context.Context, input model.NewArticle) (*model.Article, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.WriteArticle(ctx, &input)
+// CreatePost is the resolver for the createPost field.
+func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (*model.Post, error) {
+	panic(fmt.Errorf("not implemented: CreatePost - createPost"))
 }
 
 // SetKeywords is the resolver for the setKeywords field.
@@ -41,21 +29,33 @@ func (r *mutationResolver) SetKeywords(ctx context.Context, input model.SetKeywo
 	return repo.WriteKeywords(ctx, &input)
 }
 
-// Articles is the resolver for the articles field.
-func (r *queryResolver) Articles(ctx context.Context) ([]*model.Article, error) {
+// Writer is the resolver for the writer field.
+func (r *postResolver) Writer(ctx context.Context, obj *model.Post) (*model.Person, error) {
 	repo := repository.GetNeo4jRepo()
-	return repo.GetArticles(ctx)
+	return repo.GetWriter(ctx, obj)
 }
 
-// Article returns ArticleResolver implementation.
-func (r *Resolver) Article() ArticleResolver { return &articleResolver{r} }
+// Keywords is the resolver for the keywords field.
+func (r *postResolver) Keywords(ctx context.Context, obj *model.Post) ([]string, error) {
+	repo := repository.GetNeo4jRepo()
+	return repo.GetKeywords(ctx, obj.Uuid)
+}
+
+// Posts is the resolver for the posts field.
+func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+	repo := repository.GetNeo4jRepo()
+	return repo.GetPosts(ctx)
+}
 
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
+// Post returns PostResolver implementation.
+func (r *Resolver) Post() PostResolver { return &postResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
-type articleResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
+type postResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

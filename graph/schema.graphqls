@@ -11,8 +11,14 @@ type Person {
   uuid: String!
 }
 
+type Keyword {
+  value: String!
+  usages: Int!
+}
+
 type Query {
   posts: [Post!]!
+  keywords: [Keyword!]!
 }
 
 input NewPost {

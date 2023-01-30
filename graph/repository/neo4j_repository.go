@@ -169,7 +169,7 @@ func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model
 	})
 }
 
-func (r *Neo4jRepo) GetKeywords(ctx context.Context, k string) ([]string, error) {
+func (r *Neo4jRepo) GetKeywordsForUuid(ctx context.Context, k string) ([]string, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) ([]string, error) {
 		result, err := tx.Run(ctx, `MATCH (:Post {uuid: $uuid})-[:relates_to]->(k:Keyword) RETURN k.value`,
@@ -188,6 +188,34 @@ func (r *Neo4jRepo) GetKeywords(ctx context.Context, k string) ([]string, error)
 			}
 			keyword := rawNode.(string)
 			keywords = append(keywords, keyword)
+		}
+		return keywords, nil
+	})
+}
+
+func (r *Neo4jRepo) GetKeywords(ctx context.Context) ([]*model.Keyword, error) {
+	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
+	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) ([]*model.Keyword, error) {
+		result, err := tx.Run(ctx, `MATCH (k:Keyword) OPTIONAL MATCH (k)<-[r:relates_to]-()
+          RETURN k.value, count(r) AS usages ORDER BY usages DESC`,
+			map[string]any{})
+		if err != nil {
+			return nil, err
+		}
+		keywords := make([]*model.Keyword, 0)
+		for result.Next(ctx) {
+			record := result.Record()
+			rawKeywordValue, found := record.Get("k.value")
+			if !found {
+				return nil, fmt.Errorf("could not find column")
+			}
+			keyword := rawKeywordValue.(string)
+			rawUsages, found := record.Get("usages")
+			if !found {
+				return nil, fmt.Errorf("could not find column")
+			}
+			usages := rawUsages.(int64)
+			keywords = append(keywords, &model.Keyword{Value: keyword, Usages: usages})
 		}
 		return keywords, nil
 	})

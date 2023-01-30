@@ -38,13 +38,19 @@ func (r *postResolver) Writer(ctx context.Context, obj *model.Post) (*model.Pers
 // Keywords is the resolver for the keywords field.
 func (r *postResolver) Keywords(ctx context.Context, obj *model.Post) ([]string, error) {
 	repo := repository.GetNeo4jRepo()
-	return repo.GetKeywords(ctx, obj.Uuid)
+	return repo.GetKeywordsForUuid(ctx, obj.Uuid)
 }
 
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 	repo := repository.GetNeo4jRepo()
 	return repo.GetPosts(ctx)
+}
+
+// Keywords is the resolver for the keywords field.
+func (r *queryResolver) Keywords(ctx context.Context) ([]*model.Keyword, error) {
+	repo := repository.GetNeo4jRepo()
+	return repo.GetKeywords(ctx)
 }
 
 // Mutation returns MutationResolver implementation.

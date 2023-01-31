@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jgero/hmc-datastore/graph/model"
 	"github.com/jgero/hmc-datastore/graph/repository"
@@ -20,7 +19,8 @@ func (r *mutationResolver) CreatePerson(ctx context.Context, input model.NewPers
 
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (*model.Post, error) {
-	panic(fmt.Errorf("not implemented: CreatePost - createPost"))
+	repo := repository.GetNeo4jRepo()
+	return repo.WritePost(ctx, &input)
 }
 
 // SetKeywords is the resolver for the setKeywords field.

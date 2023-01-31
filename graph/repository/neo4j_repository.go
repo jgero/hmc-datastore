@@ -51,12 +51,18 @@ func (r *Neo4jRepo) WritePost(ctx context.Context, a *model.NewPost) (*model.Pos
 		records, err := tx.Run(ctx, `
             MATCH (p:Person { uuid: $writerUuid })
             CREATE (n:Post { title: $title, content: $content, uuid: $uuid })<-[:writer]-(p)
+            WITH n
+            FOREACH (kwd in $keywords |
+              MERGE (k:Keyword {value:kwd})
+              MERGE (n)-[:relates_to]->(k)
+            )
             RETURN n`,
 			map[string]any{
 				"title":      a.Title,
 				"content":    a.Content,
 				"uuid":       id,
 				"writerUuid": a.WriterUUID,
+				"keywords":   a.Keywords,
 			})
 		if err != nil {
 			return nil, err

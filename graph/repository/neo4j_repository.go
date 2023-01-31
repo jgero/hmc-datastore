@@ -40,29 +40,7 @@ func (r *Neo4jRepo) GetPosts(ctx context.Context) ([]*model.Post, error) {
 		if err != nil {
 			return nil, err
 		}
-		articles := make([]*model.Post, 0)
-		for result.Next(ctx) {
-			record := result.Record()
-			rawNode, found := record.Get("n")
-			if !found {
-				return nil, fmt.Errorf("could not find column")
-			}
-			articleNode := rawNode.(neo4j.Node)
-			title, err := neo4j.GetProperty[string](articleNode, "title")
-			if err != nil {
-				return nil, err
-			}
-			content, err := neo4j.GetProperty[string](articleNode, "content")
-			if err != nil {
-				return nil, err
-			}
-			uuid, err := neo4j.GetProperty[string](articleNode, "uuid")
-			if err != nil {
-				return nil, err
-			}
-			articles = append(articles, &model.Post{Title: title, Content: content, Uuid: uuid})
-		}
-		return articles, nil
+		return extractPostsFromResult(result, ctx)
 	})
 }
 
@@ -84,55 +62,22 @@ func (r *Neo4jRepo) WritePost(ctx context.Context, a *model.NewPost) (*model.Pos
 			return nil, err
 		}
 		record, err := records.Single(ctx)
-		if err != nil {
-			return nil, err
-		}
-		rawNode, found := record.Get("n")
-		if !found {
-			return nil, fmt.Errorf("could not find column")
-		}
-		articleNode := rawNode.(neo4j.Node)
-		title, err := neo4j.GetProperty[string](articleNode, "title")
-		if err != nil {
-			return nil, err
-		}
-		content, err := neo4j.GetProperty[string](articleNode, "content")
-		if err != nil {
-			return nil, err
-		}
-		uuid, err := neo4j.GetProperty[string](articleNode, "uuid")
-		if err != nil {
-			return nil, err
-		}
-		return &model.Post{Title: title, Content: content, Uuid: uuid}, nil
+		return extractPostFromRecord(record, ctx)
 	})
 }
 
 func (r *Neo4jRepo) GetWriter(ctx context.Context, a *model.Post) (*model.Person, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Person, error) {
-		result, err := tx.Run(ctx, `MATCH (:Post { uuid: $uuid })<-[:writer]-(p:Person) RETURN p`,
+		result, err := tx.Run(ctx, `MATCH (:Post { uuid: $uuid })<-[:writer]-(n:Person) RETURN n`,
 			map[string]any{
-				"uuid": a.Uuid,
+				"uuid": a.UUID,
 			})
 		record, err := result.Single(ctx)
 		if err != nil {
 			return nil, err
 		}
-		rawNode, found := record.Get("p")
-		if !found {
-			return nil, fmt.Errorf("could not find column")
-		}
-		writerNode := rawNode.(neo4j.Node)
-		name, err := neo4j.GetProperty[string](writerNode, "name")
-		if err != nil {
-			return nil, err
-		}
-		uuid, err := neo4j.GetProperty[string](writerNode, "uuid")
-		if err != nil {
-			return nil, err
-		}
-		return &model.Person{Name: name, UUID: uuid}, nil
+		return extractPersonFromRecord(record, ctx)
 	})
 }
 
@@ -140,7 +85,7 @@ func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Person, error) {
 		id := uuid.NewString()
-		records, err := tx.Run(ctx, `CREATE (p:Person { uuid: $uuid, name: $name }) RETURN p`,
+		records, err := tx.Run(ctx, `CREATE (n:Person { uuid: $uuid, name: $name }) RETURN n`,
 			map[string]any{
 				"uuid": id,
 				"name": p.Name,
@@ -152,96 +97,163 @@ func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model
 		if err != nil {
 			return nil, err
 		}
-		rawNode, found := record.Get("p")
-		if !found {
-			return nil, fmt.Errorf("could not find column")
-		}
-		personNode := rawNode.(neo4j.Node)
-		uuid, err := neo4j.GetProperty[string](personNode, "uuid")
-		if err != nil {
-			return nil, err
-		}
-		name, err := neo4j.GetProperty[string](personNode, "name")
-		if err != nil {
-			return nil, err
-		}
-		return &model.Person{Name: name, UUID: uuid}, nil
+		return extractPersonFromRecord(record, ctx)
 	})
 }
 
-func (r *Neo4jRepo) GetKeywordsForUuid(ctx context.Context, k string) ([]string, error) {
+func (r *Neo4jRepo) GetKeywordsForUuid(ctx context.Context, k string) ([]*model.Keyword, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
-	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) ([]string, error) {
-		result, err := tx.Run(ctx, `MATCH (:Post {uuid: $uuid})-[:relates_to]->(k:Keyword) RETURN k.value`,
+	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) ([]*model.Keyword, error) {
+		result, err := tx.Run(ctx, `
+            MATCH ({uuid: $uuid})-[:relates_to]->(k:Keyword)
+            OPTIONAL MATCH (k)<-[r:relates_to]-()
+            RETURN k.value, count(r) AS usages ORDER BY usages DESC`,
 			map[string]any{
 				"uuid": k,
 			})
 		if err != nil {
 			return nil, err
 		}
-		keywords := make([]string, 0)
-		for result.Next(ctx) {
-			record := result.Record()
-			rawNode, found := record.Get("k.value")
-			if !found {
-				return nil, fmt.Errorf("could not find column")
-			}
-			keyword := rawNode.(string)
-			keywords = append(keywords, keyword)
-		}
-		return keywords, nil
+		return extractKeywordsFromResult(result, ctx)
 	})
 }
 
 func (r *Neo4jRepo) GetKeywords(ctx context.Context) ([]*model.Keyword, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) ([]*model.Keyword, error) {
-		result, err := tx.Run(ctx, `MATCH (k:Keyword) OPTIONAL MATCH (k)<-[r:relates_to]-()
-          RETURN k.value, count(r) AS usages ORDER BY usages DESC`,
+		result, err := tx.Run(ctx, `
+            MATCH (k:Keyword) OPTIONAL MATCH (k)<-[r:relates_to]-()
+            RETURN k.value, count(r) AS usages ORDER BY usages DESC`,
 			map[string]any{})
 		if err != nil {
 			return nil, err
 		}
-		keywords := make([]*model.Keyword, 0)
-		for result.Next(ctx) {
-			record := result.Record()
-			rawKeywordValue, found := record.Get("k.value")
-			if !found {
-				return nil, fmt.Errorf("could not find column")
-			}
-			keyword := rawKeywordValue.(string)
-			rawUsages, found := record.Get("usages")
-			if !found {
-				return nil, fmt.Errorf("could not find column")
-			}
-			usages := rawUsages.(int64)
-			keywords = append(keywords, &model.Keyword{Value: keyword, Usages: usages})
-		}
-		return keywords, nil
+		return extractKeywordsFromResult(result, ctx)
 	})
 }
 
-func (r *Neo4jRepo) WriteKeywords(ctx context.Context, s *model.SetKeywords) ([]string, error) {
+func (r *Neo4jRepo) WriteKeywords(ctx context.Context, s *model.SetKeywords) ([]model.KeywordLink, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
-	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) ([]string, error) {
-		_, err := tx.Run(ctx, `
-        MATCH (n {uuid: $uuid})
-        WITH n, $keywords as kwds
-        FOREACH (kwd in kwds |
-          MERGE (k:Keyword {value:kwd})
-          MERGE (n)-[:relates_to]->(k)
-        )
-        WITH n, kwds
-        MATCH (n)-[r:relates_to]-(k:Keyword) 
-        WHERE NOT k.value IN kwds
-        DELETE r`,
+	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) ([]model.KeywordLink, error) {
+		query := `
+            MATCH (n) WHERE n.uuid in $uuids
+            WITH n, $keywords as kwds
+            FOREACH (kwd in kwds |
+              MERGE (k:Keyword {value:kwd})
+              MERGE (n)-[:relates_to]->(k)
+            )`
+		if s.Exclusive {
+			query += `
+                WITH n, kwds
+                MATCH (n)-[r:relates_to]-(k:Keyword) 
+                WHERE NOT k.value IN kwds
+                DELETE r`
+		}
+		query += `
+            RETURN n`
+		result, err := tx.Run(ctx, query,
 			map[string]any{
-				"uuid":     s.UUID,
+				"uuids":    s.UUIDs,
 				"keywords": s.Keywords,
 			})
 		if err != nil {
 			return nil, err
 		}
-		return s.Keywords, nil
+		modifiedItems := make([]model.KeywordLink, 0)
+		for result.Next(ctx) {
+			record := result.Record()
+			rawNode, found := record.Get("n")
+			if !found {
+				return nil, fmt.Errorf("could not find column")
+			}
+			actualNode := rawNode.(neo4j.Node)
+			for _, v := range actualNode.Labels {
+				switch v {
+				case "Person":
+					p, err := extractPersonFromRecord(record, ctx)
+					if err != nil {
+						return nil, err
+					}
+					modifiedItems = append(modifiedItems, p)
+				case "Post":
+					p, err := extractPostFromRecord(record, ctx)
+					if err != nil {
+						return nil, err
+					}
+					modifiedItems = append(modifiedItems, p)
+				}
+			}
+		}
+		return modifiedItems, nil
 	})
+}
+
+func extractPersonFromRecord(record *neo4j.Record, ctx context.Context) (*model.Person, error) {
+	rawNode, found := record.Get("n")
+	if !found {
+		return nil, fmt.Errorf("could not find column")
+	}
+	personNode := rawNode.(neo4j.Node)
+	name, err := neo4j.GetProperty[string](personNode, "name")
+	if err != nil {
+		return nil, err
+	}
+	uuid, err := neo4j.GetProperty[string](personNode, "uuid")
+	if err != nil {
+		return nil, err
+	}
+	return &model.Person{Name: name, UUID: uuid}, nil
+}
+
+func extractKeywordsFromResult(result neo4j.ResultWithContext, ctx context.Context) ([]*model.Keyword, error) {
+	keywords := make([]*model.Keyword, 0)
+	for result.Next(ctx) {
+		record := result.Record()
+		rawKeywordValue, found := record.Get("k.value")
+		if !found {
+			return nil, fmt.Errorf("could not find column")
+		}
+		keyword := rawKeywordValue.(string)
+		rawUsages, found := record.Get("usages")
+		if !found {
+			return nil, fmt.Errorf("could not find column")
+		}
+		usages := rawUsages.(int64)
+		keywords = append(keywords, &model.Keyword{Value: keyword, Usages: usages})
+	}
+	return keywords, nil
+}
+
+func extractPostFromRecord(record *neo4j.Record, ctx context.Context) (*model.Post, error) {
+	rawNode, found := record.Get("n")
+	if !found {
+		return nil, fmt.Errorf("could not find column")
+	}
+	articleNode := rawNode.(neo4j.Node)
+	title, err := neo4j.GetProperty[string](articleNode, "title")
+	if err != nil {
+		return nil, err
+	}
+	content, err := neo4j.GetProperty[string](articleNode, "content")
+	if err != nil {
+		return nil, err
+	}
+	uuid, err := neo4j.GetProperty[string](articleNode, "uuid")
+	if err != nil {
+		return nil, err
+	}
+	return &model.Post{Title: title, Content: content, UUID: uuid}, nil
+}
+
+func extractPostsFromResult(result neo4j.ResultWithContext, ctx context.Context) ([]*model.Post, error) {
+	articles := make([]*model.Post, 0)
+	for result.Next(ctx) {
+		record := result.Record()
+		a, err := extractPostFromRecord(record, ctx)
+		if err != nil {
+			return nil, err
+		}
+		articles = append(articles, a)
+	}
+	return articles, nil
 }

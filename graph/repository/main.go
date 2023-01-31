@@ -11,7 +11,7 @@ type Repository interface {
     WritePost(context.Context, *model.NewPost) (*model.Post, error)
     WritePerson(context.Context, *model.NewPerson) (*model.Person, error)
     GetWriter(context.Context, *model.Post) (*model.Person, error)
-    GetKeywordsForUuid(context.Context, string) ([]string, error)
+    GetKeywordsForUuid(context.Context, string) ([]*model.Keyword, error)
     GetKeywords(context.Context) ([]*model.Keyword, error)
-    WriteKeywords(context.Context, *model.SetKeywords) ([]string, error)
+    WriteKeywords(context.Context, *model.SetKeywords) ([]model.KeywordLink, error)
 }

@@ -24,9 +24,15 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 }
 
 // SetKeywords is the resolver for the setKeywords field.
-func (r *mutationResolver) SetKeywords(ctx context.Context, input model.SetKeywords) ([]string, error) {
+func (r *mutationResolver) SetKeywords(ctx context.Context, input model.SetKeywords) ([]model.KeywordLink, error) {
 	repo := repository.GetNeo4jRepo()
 	return repo.WriteKeywords(ctx, &input)
+}
+
+// Keywords is the resolver for the keywords field.
+func (r *personResolver) Keywords(ctx context.Context, obj *model.Person) ([]*model.Keyword, error) {
+	repo := repository.GetNeo4jRepo()
+	return repo.GetKeywordsForUuid(ctx, obj.UUID)
 }
 
 // Writer is the resolver for the writer field.
@@ -36,9 +42,9 @@ func (r *postResolver) Writer(ctx context.Context, obj *model.Post) (*model.Pers
 }
 
 // Keywords is the resolver for the keywords field.
-func (r *postResolver) Keywords(ctx context.Context, obj *model.Post) ([]string, error) {
+func (r *postResolver) Keywords(ctx context.Context, obj *model.Post) ([]*model.Keyword, error) {
 	repo := repository.GetNeo4jRepo()
-	return repo.GetKeywordsForUuid(ctx, obj.Uuid)
+	return repo.GetKeywordsForUuid(ctx, obj.UUID)
 }
 
 // Posts is the resolver for the posts field.
@@ -56,6 +62,9 @@ func (r *queryResolver) Keywords(ctx context.Context) ([]*model.Keyword, error) 
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
+// Person returns PersonResolver implementation.
+func (r *Resolver) Person() PersonResolver { return &personResolver{r} }
+
 // Post returns PostResolver implementation.
 func (r *Resolver) Post() PostResolver { return &postResolver{r} }
 
@@ -63,5 +72,6 @@ func (r *Resolver) Post() PostResolver { return &postResolver{r} }
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
+type personResolver struct{ *Resolver }
 type postResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

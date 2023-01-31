@@ -61,6 +61,10 @@ models:
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int32
+  Person:
+    fields:
+      keywords:
+        resolver: true
   Post:
     fields:
       writer:

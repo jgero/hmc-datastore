@@ -3,12 +3,13 @@ type Post {
   content: String!
   writer: Person!
   uuid: String!
-  keywords: [String!]!
+  keywords: [Keyword!]!
 }
 
 type Person {
   name: String!
   uuid: String!
+  keywords: [Keyword!]!
 }
 
 type Keyword {
@@ -33,12 +34,15 @@ input NewPerson {
 }
 
 input SetKeywords {
-  uuid: String!
+  uuids: [String]!
   keywords: [String!]!
+  exclusive: Boolean!
 }
+
+union KeywordLink = Person | Post
 
 type Mutation {
   createPerson(input: NewPerson!): Person!
   createPost(input: NewPost!): Post!
-  setKeywords(input: SetKeywords!): [String!]!
+  setKeywords(input: SetKeywords!): [KeywordLink!]!
 }

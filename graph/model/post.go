@@ -3,8 +3,10 @@ package model
 type Post struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
-	Uuid    string `json:"uuid"`
+	UUID    string `json:"uuid"`
 }
+
+func (Post) IsKeywordLink() {}
 
 type NewPost struct {
 	Title      string   `json:"title"`

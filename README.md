@@ -6,7 +6,5 @@
 
 ## TODO
 
-- add unique constraints to neo4j uuid node attributes
-- use unions for search results
 - enable update mutations or change current one to upsert mutations
 

@@ -31,6 +31,7 @@ input NewPost {
 
 input NewPerson {
   name: String!
+  keywords: [String!]!
 }
 
 input SetKeywords {

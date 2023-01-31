@@ -91,10 +91,18 @@ func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Person, error) {
 		id := uuid.NewString()
-		records, err := tx.Run(ctx, `CREATE (n:Person { uuid: $uuid, name: $name }) RETURN n`,
+		records, err := tx.Run(ctx, `
+            CREATE (n:Person { uuid: $uuid, name: $name })
+            WITH n
+            FOREACH (kwd in $keywords |
+                MERGE (k:Keyword {value:kwd})
+                MERGE (n)-[:relates_to]->(k)
+            )
+            RETURN n`,
 			map[string]any{
-				"uuid": id,
-				"name": p.Name,
+				"uuid":     id,
+				"name":     p.Name,
+				"keywords": p.Keywords,
 			})
 		if err != nil {
 			return nil, err

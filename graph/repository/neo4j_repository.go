@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jgero/hmc-datastore/graph/model"
@@ -48,9 +49,10 @@ func (r *Neo4jRepo) WritePost(ctx context.Context, a *model.NewPost) (*model.Pos
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Post, error) {
 		id := uuid.NewString()
+		created := time.Now().Unix()
 		records, err := tx.Run(ctx, `
             MATCH (p:Person { uuid: $writerUuid })
-            CREATE (n:Post { title: $title, content: $content, uuid: $uuid })<-[:writer]-(p)
+            CREATE (n:Post { title: $title, content: $content, uuid: $uuid, created: $created })<-[:writer]-(p)
             WITH n
             FOREACH (kwd in $keywords |
               MERGE (k:Keyword {value:kwd})
@@ -61,6 +63,7 @@ func (r *Neo4jRepo) WritePost(ctx context.Context, a *model.NewPost) (*model.Pos
 				"title":      a.Title,
 				"content":    a.Content,
 				"uuid":       id,
+				"created":    created,
 				"writerUuid": a.WriterUUID,
 				"keywords":   a.Keywords,
 			})
@@ -256,7 +259,11 @@ func extractPostFromRecord(record *neo4j.Record, ctx context.Context) (*model.Po
 	if err != nil {
 		return nil, err
 	}
-	return &model.Post{Title: title, Content: content, UUID: uuid}, nil
+	created, err := neo4j.GetProperty[int64](articleNode, "created")
+	if err != nil {
+		return nil, err
+	}
+	return &model.Post{Title: title, Content: content, UUID: uuid, CreatedUnix: created}, nil
 }
 
 func extractPostsFromResult(result neo4j.ResultWithContext, ctx context.Context) ([]*model.Post, error) {

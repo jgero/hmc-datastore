@@ -1,9 +1,10 @@
 package model
 
 type Post struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	UUID    string `json:"uuid"`
+	Title       string `json:"title"`
+	Content     string `json:"content"`
+	UUID        string `json:"uuid"`
+	CreatedUnix int64  `json:"created"`
 }
 
 func (Post) IsKeywordLink() {}

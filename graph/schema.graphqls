@@ -3,6 +3,7 @@ type Post {
   content: String!
   writer: Person!
   uuid: String!
+  created: Int!
   keywords: [Keyword!]!
 }
 

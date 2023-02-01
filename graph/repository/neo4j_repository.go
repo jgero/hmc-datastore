@@ -52,7 +52,7 @@ func (r *Neo4jRepo) WritePost(ctx context.Context, a *model.NewPost) (*model.Pos
 		created := time.Now().Unix()
 		records, err := tx.Run(ctx, `
             MATCH (p:Person { uuid: $writerUuid })
-            CREATE (n:Post { title: $title, content: $content, uuid: $uuid, created: $created })<-[:writer]-(p)
+            CREATE (n:Post { title: $title, content: $content, uuid: $uuid, created: $created, updated: $created, updateCount: 0 })<-[:writer]-(p)
             WITH n
             FOREACH (kwd in $keywords |
               MERGE (k:Keyword {value:kwd})
@@ -94,8 +94,9 @@ func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Person, error) {
 		id := uuid.NewString()
+		created := time.Now().Unix()
 		records, err := tx.Run(ctx, `
-            CREATE (n:Person { uuid: $uuid, name: $name })
+            CREATE (n:Person { uuid: $uuid, name: $name, created: $created, updated: $created, updateCount: 0 })
             WITH n
             FOREACH (kwd in $keywords |
                 MERGE (k:Keyword {value:kwd})
@@ -106,6 +107,7 @@ func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model
 				"uuid":     id,
 				"name":     p.Name,
 				"keywords": p.Keywords,
+				"created":  created,
 			})
 		if err != nil {
 			return nil, err
@@ -219,7 +221,19 @@ func extractPersonFromRecord(record *neo4j.Record, ctx context.Context) (*model.
 	if err != nil {
 		return nil, err
 	}
-	return &model.Person{Name: name, UUID: uuid}, nil
+	created, err := neo4j.GetProperty[int64](personNode, "created")
+	if err != nil {
+		return nil, err
+	}
+	updated, err := neo4j.GetProperty[int64](personNode, "updated")
+	if err != nil {
+		return nil, err
+	}
+	updateCount, err := neo4j.GetProperty[int64](personNode, "updateCount")
+	if err != nil {
+		return nil, err
+	}
+	return &model.Person{Name: name, UUID: uuid, Created: created, Updated: updated, UpdateCount: updateCount}, nil
 }
 
 func extractKeywordsFromResult(result neo4j.ResultWithContext, ctx context.Context) ([]*model.Keyword, error) {
@@ -263,7 +277,15 @@ func extractPostFromRecord(record *neo4j.Record, ctx context.Context) (*model.Po
 	if err != nil {
 		return nil, err
 	}
-	return &model.Post{Title: title, Content: content, UUID: uuid, CreatedUnix: created}, nil
+	updated, err := neo4j.GetProperty[int64](articleNode, "updated")
+	if err != nil {
+		return nil, err
+	}
+	updateCount, err := neo4j.GetProperty[int64](articleNode, "updateCount")
+	if err != nil {
+		return nil, err
+	}
+	return &model.Post{Title: title, Content: content, UUID: uuid, Created: created, Updated: updated, UpdateCount: updateCount}, nil
 }
 
 func extractPostsFromResult(result neo4j.ResultWithContext, ctx context.Context) ([]*model.Post, error) {

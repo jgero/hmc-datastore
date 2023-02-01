@@ -4,7 +4,9 @@ type Post struct {
 	Title       string `json:"title"`
 	Content     string `json:"content"`
 	UUID        string `json:"uuid"`
-	CreatedUnix int64  `json:"created"`
+	Created     int64  `json:"created"`
+	Updated     int64  `json:"updated"`
+	UpdateCount int64  `json:"updateCount"`
 }
 
 func (Post) IsKeywordLink() {}

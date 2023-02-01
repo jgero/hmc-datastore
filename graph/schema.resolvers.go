@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jgero/hmc-datastore/graph/model"
 	"github.com/jgero/hmc-datastore/graph/repository"
@@ -40,11 +39,6 @@ func (r *personResolver) Keywords(ctx context.Context, obj *model.Person) ([]*mo
 func (r *postResolver) Writer(ctx context.Context, obj *model.Post) (*model.Person, error) {
 	repo := repository.GetNeo4jRepo()
 	return repo.GetWriter(ctx, obj)
-}
-
-// Created is the resolver for the created field.
-func (r *postResolver) Created(ctx context.Context, obj *model.Post) (int64, error) {
-	panic(fmt.Errorf("not implemented: Created - created"))
 }
 
 // Keywords is the resolver for the keywords field.

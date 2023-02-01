@@ -4,12 +4,17 @@ type Post {
   writer: Person!
   uuid: String!
   created: Int!
+  updated: Int!
+  updateCount: Int!
   keywords: [Keyword!]!
 }
 
 type Person {
   name: String!
   uuid: String!
+  created: Int!
+  updated: Int!
+  updateCount: Int!
   keywords: [Keyword!]!
 }
 

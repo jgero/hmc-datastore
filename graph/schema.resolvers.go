@@ -17,6 +17,12 @@ func (r *mutationResolver) CreatePerson(ctx context.Context, input model.NewPers
 	return repo.NewPerson(ctx, &input)
 }
 
+// UpdatePerson is the resolver for the updatePerson field.
+func (r *mutationResolver) UpdatePerson(ctx context.Context, input model.UpdatePerson) (*model.Person, error) {
+	repo := repository.GetNeo4jRepo()
+	return repo.UpdatePerson(ctx, &input)
+}
+
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (*model.Post, error) {
 	repo := repository.GetNeo4jRepo()

@@ -107,6 +107,9 @@ func (r *Neo4jRepo) UpdatePost(ctx context.Context, a *model.UpdatePost) (*model
 			return nil, err
 		}
 		record, err := records.Single(ctx)
+		if err != nil {
+			return nil, err
+		}
 		return extractPostFromRecord(record, ctx)
 	})
 }
@@ -144,6 +147,36 @@ func (r *Neo4jRepo) NewPerson(ctx context.Context, p *model.NewPerson) (*model.P
 				"name":     p.Name,
 				"keywords": p.Keywords,
 				"created":  created,
+			})
+		if err != nil {
+			return nil, err
+		}
+		record, err := records.Single(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return extractPersonFromRecord(record, ctx)
+	})
+}
+
+func (r *Neo4jRepo) UpdatePerson(ctx context.Context, a *model.UpdatePerson) (*model.Person, error) {
+	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
+	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Person, error) {
+		updated := time.Now().UnixMilli()
+		query := "MATCH (n:Person { uuid: $uuid }) SET "
+		sets := make([]string, 0)
+		sets = append(sets, "n.updated = $updated")
+		sets = append(sets, "n.updateCount = n.updateCount + 1")
+		if a.Name != nil {
+			sets = append(sets, "n.name = $name")
+		}
+		query += strings.Join(sets, ", ")
+		query += " RETURN n"
+		records, err := tx.Run(ctx, query,
+			map[string]any{
+				"name":    a.Name,
+				"uuid":    a.UUID,
+				"updated": updated,
 			})
 		if err != nil {
 			return nil, err

@@ -5,6 +5,11 @@ type NewPerson struct {
 	Keywords []string `json:"keywords"`
 }
 
+type UpdatePerson struct {
+	UUID string `json:"uuid"`
+	Name *string `json:"name"`
+}
+
 type Person struct {
 	Name        string     `json:"name"`
 	UUID        string     `json:"uuid"`

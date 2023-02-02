@@ -35,6 +35,12 @@ input NewPost {
   keywords: [String!]!
 }
 
+input UpdatePost {
+  uuid: String!
+  title: String
+  content: String
+}
+
 input NewPerson {
   name: String!
   keywords: [String!]!
@@ -51,5 +57,6 @@ union KeywordLink = Person | Post
 type Mutation {
   createPerson(input: NewPerson!): Person!
   createPost(input: NewPost!): Post!
+  updatePost(input: UpdatePost!): Post
   setKeywords(input: SetKeywords!): [KeywordLink!]!
 }

@@ -8,8 +8,9 @@ import (
 
 type Repository interface {
     GetPosts(context.Context, int64, int64) ([]*model.Post, error)
-    WritePost(context.Context, *model.NewPost) (*model.Post, error)
-    WritePerson(context.Context, *model.NewPerson) (*model.Person, error)
+    NewPost(context.Context, *model.NewPost) (*model.Post, error)
+    UpdatePost(context.Context, *model.UpdatePost) (*model.Post, error)
+    NewPerson(context.Context, *model.NewPerson) (*model.Person, error)
     GetWriter(context.Context, *model.Post) (*model.Person, error)
     GetKeywordsForUuid(context.Context, string) ([]*model.Keyword, error)
     GetKeywords(context.Context) ([]*model.Keyword, error)

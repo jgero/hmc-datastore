@@ -14,13 +14,19 @@ import (
 // CreatePerson is the resolver for the createPerson field.
 func (r *mutationResolver) CreatePerson(ctx context.Context, input model.NewPerson) (*model.Person, error) {
 	repo := repository.GetNeo4jRepo()
-	return repo.WritePerson(ctx, &input)
+	return repo.NewPerson(ctx, &input)
 }
 
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (*model.Post, error) {
 	repo := repository.GetNeo4jRepo()
-	return repo.WritePost(ctx, &input)
+	return repo.NewPost(ctx, &input)
+}
+
+// UpdatePost is the resolver for the updatePost field.
+func (r *mutationResolver) UpdatePost(ctx context.Context, input model.UpdatePost) (*model.Post, error) {
+	repo := repository.GetNeo4jRepo()
+	return repo.UpdatePost(ctx, &input)
 }
 
 // SetKeywords is the resolver for the setKeywords field.

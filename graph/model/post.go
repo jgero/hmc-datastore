@@ -17,3 +17,9 @@ type NewPost struct {
 	WriterUUID string   `json:"writerUuid"`
 	Keywords   []string `json:"keywords"`
 }
+
+type UpdatePost struct {
+	UUID    string  `json:"uuid"`
+	Title   *string `json:"title"`
+	Content *string `json:"content"`
+}

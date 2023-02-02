@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -49,7 +50,7 @@ func (r *Neo4jRepo) GetPosts(ctx context.Context, limit int64, skip int64) ([]*m
 	})
 }
 
-func (r *Neo4jRepo) WritePost(ctx context.Context, a *model.NewPost) (*model.Post, error) {
+func (r *Neo4jRepo) NewPost(ctx context.Context, a *model.NewPost) (*model.Post, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Post, error) {
 		id := uuid.NewString()
@@ -79,6 +80,37 @@ func (r *Neo4jRepo) WritePost(ctx context.Context, a *model.NewPost) (*model.Pos
 	})
 }
 
+func (r *Neo4jRepo) UpdatePost(ctx context.Context, a *model.UpdatePost) (*model.Post, error) {
+	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
+	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Post, error) {
+		updated := time.Now().UnixMilli()
+		query := "MATCH (n:Post { uuid: $uuid }) SET "
+		sets := make([]string, 0)
+		sets = append(sets, "n.updated = $updated")
+		sets = append(sets, "n.updateCount = n.updateCount + 1")
+		if a.Title != nil {
+			sets = append(sets, "n.title = $title")
+		}
+		if a.Content != nil {
+			sets = append(sets, "n.content = $content")
+		}
+		query += strings.Join(sets, ", ")
+		query += " RETURN n"
+		records, err := tx.Run(ctx, query,
+			map[string]any{
+				"title":   a.Title,
+				"content": a.Content,
+				"uuid":    a.UUID,
+				"updated": updated,
+			})
+		if err != nil {
+			return nil, err
+		}
+		record, err := records.Single(ctx)
+		return extractPostFromRecord(record, ctx)
+	})
+}
+
 func (r *Neo4jRepo) GetWriter(ctx context.Context, a *model.Post) (*model.Person, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Person, error) {
@@ -94,7 +126,7 @@ func (r *Neo4jRepo) GetWriter(ctx context.Context, a *model.Post) (*model.Person
 	})
 }
 
-func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model.Person, error) {
+func (r *Neo4jRepo) NewPerson(ctx context.Context, p *model.NewPerson) (*model.Person, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Person, error) {
 		id := uuid.NewString()

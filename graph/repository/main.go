@@ -7,7 +7,7 @@ import (
 )
 
 type Repository interface {
-    GetPosts(context.Context) ([]*model.Post, error)
+    GetPosts(context.Context, int64, int64) ([]*model.Post, error)
     WritePost(context.Context, *model.NewPost) (*model.Post, error)
     WritePerson(context.Context, *model.NewPerson) (*model.Person, error)
     GetWriter(context.Context, *model.Post) (*model.Person, error)

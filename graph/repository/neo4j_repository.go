@@ -34,10 +34,14 @@ func GetNeo4jRepo() Repository {
 	return repo
 }
 
-func (r *Neo4jRepo) GetPosts(ctx context.Context) ([]*model.Post, error) {
+func (r *Neo4jRepo) GetPosts(ctx context.Context, limit int64, skip int64) ([]*model.Post, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) ([]*model.Post, error) {
-		result, err := tx.Run(ctx, "MATCH (n:Post) RETURN n", map[string]any{})
+		result, err := tx.Run(ctx, "MATCH (n:Post) RETURN n ORDER BY n.created DESC SKIP $skip LIMIT $limit",
+			map[string]any{
+				"skip":  skip,
+				"limit": limit,
+			})
 		if err != nil {
 			return nil, err
 		}
@@ -49,7 +53,7 @@ func (r *Neo4jRepo) WritePost(ctx context.Context, a *model.NewPost) (*model.Pos
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Post, error) {
 		id := uuid.NewString()
-		created := time.Now().Unix()
+		created := time.Now().UnixMilli()
 		records, err := tx.Run(ctx, `
             MATCH (p:Person { uuid: $writerUuid })
             CREATE (n:Post { title: $title, content: $content, uuid: $uuid, created: $created, updated: $created, updateCount: 0 })<-[:writer]-(p)
@@ -94,7 +98,7 @@ func (r *Neo4jRepo) WritePerson(ctx context.Context, p *model.NewPerson) (*model
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteWrite(ctx, session, func(tx neo4j.ManagedTransaction) (*model.Person, error) {
 		id := uuid.NewString()
-		created := time.Now().Unix()
+		created := time.Now().UnixMilli()
 		records, err := tx.Run(ctx, `
             CREATE (n:Person { uuid: $uuid, name: $name, created: $created, updated: $created, updateCount: 0 })
             WITH n

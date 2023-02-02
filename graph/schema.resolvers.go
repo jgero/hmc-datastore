@@ -48,9 +48,9 @@ func (r *postResolver) Keywords(ctx context.Context, obj *model.Post) ([]*model.
 }
 
 // Posts is the resolver for the posts field.
-func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+func (r *queryResolver) Posts(ctx context.Context, limit int64, skip int64) ([]*model.Post, error) {
 	repo := repository.GetNeo4jRepo()
-	return repo.GetPosts(ctx)
+	return repo.GetPosts(ctx, limit, skip)
 }
 
 // Keywords is the resolver for the keywords field.

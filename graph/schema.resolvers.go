@@ -8,67 +8,56 @@ import (
 	"context"
 
 	"github.com/jgero/hmc-datastore/graph/model"
-	"github.com/jgero/hmc-datastore/graph/repository"
 )
 
 // CreatePerson is the resolver for the createPerson field.
 func (r *mutationResolver) CreatePerson(ctx context.Context, input model.NewPerson) (*model.Person, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.NewPerson(ctx, &input)
+	return r.Repo.NewPerson(ctx, &input)
 }
 
 // UpdatePerson is the resolver for the updatePerson field.
 func (r *mutationResolver) UpdatePerson(ctx context.Context, input model.UpdatePerson) (*model.Person, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.UpdatePerson(ctx, &input)
+	return r.Repo.UpdatePerson(ctx, &input)
 }
 
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (*model.Post, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.NewPost(ctx, &input)
+	return r.Repo.NewPost(ctx, &input)
 }
 
 // UpdatePost is the resolver for the updatePost field.
 func (r *mutationResolver) UpdatePost(ctx context.Context, input model.UpdatePost) (*model.Post, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.UpdatePost(ctx, &input)
+	return r.Repo.UpdatePost(ctx, &input)
 }
 
 // SetKeywords is the resolver for the setKeywords field.
 func (r *mutationResolver) SetKeywords(ctx context.Context, input model.SetKeywords) ([]model.KeywordLink, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.WriteKeywords(ctx, &input)
+	return r.Repo.WriteKeywords(ctx, &input)
 }
 
 // Keywords is the resolver for the keywords field.
 func (r *personResolver) Keywords(ctx context.Context, obj *model.Person) ([]*model.Keyword, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.GetKeywordsForUuid(ctx, obj.UUID)
+	return r.Repo.GetKeywordsForUuid(ctx, obj.UUID)
 }
 
 // Writer is the resolver for the writer field.
 func (r *postResolver) Writer(ctx context.Context, obj *model.Post) (*model.Person, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.GetWriter(ctx, obj)
+	return r.Repo.GetWriter(ctx, obj)
 }
 
 // Keywords is the resolver for the keywords field.
 func (r *postResolver) Keywords(ctx context.Context, obj *model.Post) ([]*model.Keyword, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.GetKeywordsForUuid(ctx, obj.UUID)
+	return r.Repo.GetKeywordsForUuid(ctx, obj.UUID)
 }
 
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context, limit int64, skip int64) ([]*model.Post, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.GetPosts(ctx, limit, skip)
+	return r.Repo.GetPosts(ctx, limit, skip)
 }
 
 // Keywords is the resolver for the keywords field.
 func (r *queryResolver) Keywords(ctx context.Context) ([]*model.Keyword, error) {
-	repo := repository.GetNeo4jRepo()
-	return repo.GetKeywords(ctx)
+	return r.Repo.GetKeywords(ctx)
 }
 
 // Mutation returns MutationResolver implementation.

@@ -7,6 +7,7 @@ import (
 )
 
 type Repository interface {
+    Close(context.Context)
     GetPosts(context.Context, int64, int64) ([]*model.Post, error)
     NewPost(context.Context, *model.NewPost) (*model.Post, error)
     UpdatePost(context.Context, *model.UpdatePost) (*model.Post, error)

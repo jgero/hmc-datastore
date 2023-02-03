@@ -15,24 +15,19 @@ type Neo4jRepo struct {
 	driver neo4j.DriverWithContext
 }
 
-var repo *Neo4jRepo
-
-func GetNeo4jRepo() Repository {
-	if repo == nil {
-		driver, err := neo4j.NewDriverWithContext(
-			"neo4j://localhost:7687",
-			neo4j.BasicAuth("neo4j", "neo4jneo4j", ""),
-		)
-		if err != nil {
-			panic(err)
-		}
-		// TODO: fix closing driver
-		// ctx := context.Background()
-		// close driver when background shuts down
-		// defer driver.Close(ctx)
-		repo = &Neo4jRepo{driver}
+func NewNeo4jRepo(conn string, user string, password string) Repository {
+	driver, err := neo4j.NewDriverWithContext(
+		"neo4j://localhost:7687",
+		neo4j.BasicAuth("neo4j", "neo4jneo4j", ""),
+	)
+	if err != nil {
+		panic(err)
 	}
-	return repo
+	return &Neo4jRepo{driver}
+}
+
+func (r *Neo4jRepo) Close(ctx context.Context) {
+	r.driver.Close(ctx)
 }
 
 func (r *Neo4jRepo) GetPosts(ctx context.Context, limit int64, skip int64) ([]*model.Post, error) {

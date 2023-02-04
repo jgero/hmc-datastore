@@ -30,13 +30,23 @@ func (r *Neo4jRepo) Close(ctx context.Context) {
 	r.driver.Close(ctx)
 }
 
-func (r *Neo4jRepo) GetPosts(ctx context.Context, limit int64, skip int64) ([]*model.Post, error) {
+func (r *Neo4jRepo) GetPosts(ctx context.Context, limit int64, skip int64, keywords []string) ([]*model.Post, error) {
 	session := r.driver.NewSession(ctx, neo4j.SessionConfig{})
 	return neo4j.ExecuteRead(ctx, session, func(tx neo4j.ManagedTransaction) ([]*model.Post, error) {
-		result, err := tx.Run(ctx, "MATCH (n:Post) RETURN n ORDER BY n.created DESC SKIP $skip LIMIT $limit",
+		var query string
+		if len(keywords) > 0 {
+			query = `MATCH (n:Post)--(k:Keyword)
+                WITH n, collect(k) as kNodes
+                WHERE ALL(kwd IN $keywords WHERE ANY(kn IN kNodes WHERE kn.value = kwd))
+                RETURN n ORDER BY n.created DESC SKIP $skip LIMIT $limit`
+		} else {
+			query = "MATCH (n:Post) RETURN n ORDER BY n.created DESC SKIP $skip LIMIT $limit"
+		}
+		result, err := tx.Run(ctx, query,
 			map[string]any{
-				"skip":  skip,
-				"limit": limit,
+				"keywords": keywords,
+				"skip":     skip,
+				"limit":    limit,
 			})
 		if err != nil {
 			return nil, err

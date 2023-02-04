@@ -24,7 +24,7 @@ type Keyword {
 }
 
 type Query {
-  posts(limit: Int!, skip: Int!): [Post!]!
+  posts(limit: Int!, skip: Int!, keywords: [String!]!): [Post!]!
   keywords: [Keyword!]!
 }
 

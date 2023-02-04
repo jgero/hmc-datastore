@@ -51,8 +51,8 @@ func (r *postResolver) Keywords(ctx context.Context, obj *model.Post) ([]*model.
 }
 
 // Posts is the resolver for the posts field.
-func (r *queryResolver) Posts(ctx context.Context, limit int64, skip int64) ([]*model.Post, error) {
-	return r.Repo.GetPosts(ctx, limit, skip)
+func (r *queryResolver) Posts(ctx context.Context, limit int64, skip int64, keywords []string) ([]*model.Post, error) {
+	return r.Repo.GetPosts(ctx, limit, skip, keywords)
 }
 
 // Keywords is the resolver for the keywords field.

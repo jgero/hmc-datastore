@@ -2,3 +2,8 @@
 *_gen.go
 generated.go
 data
+
+
+# Added by cargo
+
+/target

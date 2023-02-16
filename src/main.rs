@@ -4,6 +4,8 @@ use std::env;
 use crate::schema::{Context, new_schema};
 use warp::{http::Response, Filter};
 
+use crate::reopsitory::InMemoryRepository;
+
 mod schema;
 mod model;
 mod reopsitory;
@@ -25,7 +27,7 @@ async fn main() {
 
     log::info!("Listening on 127.0.0.1:8080");
 
-    let state = warp::any().map(move || Context {});
+    let state = warp::any().map(move || Context { repo: Box::new(InMemoryRepository::new())  });
     let graphql_filter = juniper_warp::make_graphql_filter(new_schema(), state.boxed());
 
     warp::serve(

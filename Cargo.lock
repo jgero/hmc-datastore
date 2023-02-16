@@ -536,11 +536,13 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 name = "hmc-datastore"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "env_logger",
  "juniper",
  "juniper_warp",
  "log",
  "tokio",
+ "uuid",
  "warp",
 ]
 
@@ -705,7 +707,6 @@ version = "0.15.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52adf17d43d0b526eed31fac15d9312941c5c2558ffbfb105811690b96d6e2f1"
 dependencies = [
- "anyhow",
  "async-trait",
  "bson",
  "chrono",
@@ -716,7 +717,6 @@ dependencies = [
  "indexmap",
  "juniper_codegen",
  "serde",
- "serde_json",
  "smartstring",
  "static_assertions",
  "url",
@@ -1507,6 +1507,9 @@ name = "uuid"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
+dependencies = [
+ "getrandom 0.2.8",
+]
 
 [[package]]
 name = "version_check"

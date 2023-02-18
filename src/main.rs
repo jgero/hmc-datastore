@@ -2,13 +2,12 @@
 
 use std::env;
 use crate::schema::{Context, new_schema};
+use crate::repository::gremlin::GremlinRepository;
 use warp::{http::Response, Filter};
-
-use crate::reopsitory::InMemoryRepository;
 
 mod schema;
 mod model;
-mod reopsitory;
+mod repository;
 
 #[tokio::main]
 async fn main() {
@@ -27,7 +26,8 @@ async fn main() {
 
     log::info!("Listening on 127.0.0.1:8080");
 
-    let state = warp::any().map(move || Context { repo: Box::new(InMemoryRepository::new())  });
+    // let state = warp::any().map(move || Context { repo: Box::new(InMemoryRepository::new())  });
+    let state = warp::any().map(move || Context { repo: Box::new(GremlinRepository::new("localhost"))  });
     let graphql_filter = juniper_warp::make_graphql_filter(new_schema(), state.boxed());
 
     warp::serve(

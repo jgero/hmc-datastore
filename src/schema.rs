@@ -1,6 +1,6 @@
 use juniper::{FieldResult, EmptySubscription, FieldError};
 
-use crate::{reopsitory::Repository, model::person::{NewPerson, Person}};
+use crate::{model::person::{NewPerson, Person}, repository::interface::Repository};
 
 pub struct Context {
     pub repo: Box<dyn Repository + Sync + Send>
@@ -17,7 +17,7 @@ impl Query {
     }
 
     fn persons(context: &Context) -> FieldResult<Vec<Person>> {
-        context.repo.get_persons().or_else(|e| Err(FieldError::new(e.clone(), graphql_value!({ "internal_error": e }))))
+        context.repo.get_persons().or_else(|e| Err(FieldError::new(e.type_message(), graphql_value!(e.to_string()))))
     }
 }
 
@@ -26,7 +26,7 @@ pub struct Mutation;
 #[graphql_object(context = Context)]
 impl Mutation {
     fn createPerson(context: &Context, new_person: NewPerson) -> FieldResult<Person> {
-        context.repo.new_person(new_person).or_else(|e| Err(FieldError::new(e.clone(), graphql_value!({ "internal_error": e }))))
+        context.repo.new_person(new_person).or_else(|e| Err(FieldError::new(e.type_message(), graphql_value!(e.to_string()))))
     }
 }
 
